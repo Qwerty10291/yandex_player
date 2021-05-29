@@ -2,7 +2,7 @@ from typing import List
 import typing
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtGui import QColor, QPalette, QResizeEvent, QFont
 import yandex_music as ym
 
 class TrackList(QtWidgets.QWidget):
@@ -19,6 +19,9 @@ class TrackList(QtWidgets.QWidget):
         self._init_ui()
     
     def _init_ui(self):
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), QColor(27, 38, 44))
+        self.setPalette(palette)
         self.layout_:QtWidgets.QVBoxLayout = QtWidgets.QVBoxLayout(self)
     
     def add_track(self, track:ym.Track):
@@ -40,6 +43,8 @@ class TrackList(QtWidgets.QWidget):
             self.add_track(track)
     
     def set_track_active(self, id:int):
+        if self.current_id == id:
+            return
         if not self.active:
             self.app.set_active_playlist(self)
         if self.track_active:
@@ -48,6 +53,7 @@ class TrackList(QtWidgets.QWidget):
         self.track_active = self.track_widgets[id]
         self.track_active.set_active()
         self.app.set_current_track_title(self.track_active.title.text())
+        self.app.set_playing_track(self.track_active.track_bytes)
     
     def next(self):
         print('next')
@@ -72,45 +78,59 @@ class TrackListItem(QtWidgets.QWidget):
 
         self.track = track
         self.id = id
-        
+
+        self.is_track_loaded = False
         self.setup_ui()
     
     def setup_ui(self):
         self.setAutoFillBackground(True)
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), QColor(27, 38, 44))
+        self.setPalette(palette)
         self.layout_ = QtWidgets.QHBoxLayout(self)
+
+        font = QFont()
+        font.setPixelSize(22)
 
         artists = ','.join([artist.name for artist in self.track.artists])
         self.author = QtWidgets.QLabel(artists, self)
         size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         size_policy.setHorizontalStretch(3)
         self.author.setSizePolicy(size_policy)
+        self.author.setFont(font)
         self.layout_.addWidget(self.author)
 
         self.title = QtWidgets.QLabel(self.track.title, self)
         size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         size_policy.setHorizontalStretch(6)
         self.title.setSizePolicy(size_policy)
+        self.title.setFont(font)
         self.layout_.addWidget(self.title)
 
-        track_lenght = f'{int(self.track.duration_ms/ 60000)}:{int((self.track.duration_ms % 60000) / 1000)}'
+        track_lenght = f'{int(self.track.duration_ms / 60000)}:{int((self.track.duration_ms % 60000) / 1000)}'
         self.track_lenght = QtWidgets.QLabel(track_lenght, self)
         size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         size_policy.setHorizontalStretch(1)
         self.track_lenght.setSizePolicy(size_policy)
+        self.track_lenght.setFont(font)
         self.layout_.addWidget(self.track_lenght)
 
         self.layout_.setAlignment(Qt.AlignTop)
-
-        print(self.height())
     
     def mousePressEvent(self, a0) -> None:
         super().mousePressEvent(a0)
         self.track_list.set_track_active(self.id)
     
+    
     def set_active(self):
+        if not self.is_track_loaded:
+            self.track_bytes = self.track.load_bytes()
+
         palette = self.palette()
         palette.setColor(self.backgroundRole(), QColor(52, 55, 70))
         self.setPalette(palette)
     
     def set_unactive(self):
-        self.setStyleSheet('')
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), QColor(27, 38, 44))
+        self.setPalette(palette)

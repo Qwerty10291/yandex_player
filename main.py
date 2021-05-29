@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtMultimedia
 from widgets import main_widget, track_list_widget
 import sys
 import yandex_music as ym
@@ -19,6 +19,8 @@ class App(QtWidgets.QWidget):
         self.create_playlists()
         self.load_liked()
 
+        self.player = QtMultimedia.QMediaPlayer(self)
+        self.is_playing = False
 
         self.connect_buttons()
 
@@ -40,17 +42,48 @@ class App(QtWidgets.QWidget):
         self.current_playlist = playlist
         self.current_playlist.activate()
     
+    def set_playing_track(self, track_bytes):
+        array = QtCore.QByteArray(track_bytes)
+        self.buffer = QtCore.QBuffer(self)
+        self.buffer.setData(array)
+        self.buffer.open(QtCore.QIODevice.ReadOnly)
+        self.player.deleteLater()
+        self.player = QtMultimedia.QMediaPlayer(self)
+        print('opened')
+        self.player.setMedia(QtMultimedia.QMediaContent(), self.buffer)
+        self.player.mediaStatusChanged.connect(self.check_media_status)
+        self.player.play()
+        self.is_playing = True
+    
+    def check_media_status(self, status):
+        if status == QtMultimedia.QMediaPlayer.EndOfMedia:
+            self.next()
+
     def next(self):
         if self.current_playlist:
+            self.player.stop()
             self.current_playlist.next()
     
     def prev(self):
         if self.current_playlist:
+            self.player.stop()
             self.current_playlist.prev()
+    
+    
+    def play_pause(self):
+        if self.current_playlist:
+            if self.is_playing:
+                self.player.pause()
+                self.is_playing = False
+            else:
+                self.player.play()
+                self.is_playing = True
+
     
     def connect_buttons(self):
         self.ui.btn_next.clicked.connect(self.next)
         self.ui.btn_prev.clicked.connect(self.prev)
+        self.ui.btn_play.clicked.connect(self.play_pause)
 
         
 
