@@ -179,6 +179,7 @@ class TrackListItem(QtWidgets.QWidget):
     def set_unactive(self):
         """установка этого трека неактивным"""
         self.unload_track()
+        
         self.is_active = False
 
         palette = self.palette()

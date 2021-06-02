@@ -8,10 +8,10 @@ class Player:
     def set_playing_track(self, track_bytes):
         """принимает на вход сырой бинарник трека, обрабатывает и запускает плеер"""
         array = QtCore.QByteArray(track_bytes)
-        self.buffer = QtCore.QBuffer(self)
-        self.buffer.setData(array)
-        self.buffer.open(QtCore.QIODevice.ReadOnly)
-        self.player.setMedia(QtMultimedia.QMediaContent(), self.buffer)
+        buffer = QtCore.QBuffer(self)
+        buffer.setData(array)
+        buffer.open(QtCore.QIODevice.ReadOnly)
+        self.player.setMedia(QtMultimedia.QMediaContent(), buffer)
         self.play()
         self.is_playing = True
     
